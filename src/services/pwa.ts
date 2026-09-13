@@ -115,15 +115,15 @@ export async function promptAppInstall(): Promise<boolean> {
  */
 export function usePWAInstall() {
   const [canInstall, setCanInstall] = useState<boolean>(deferredPrompt !== null);
-  const [isStandalone, setIsStandalone] = useState<boolean>(false);
+  const [isStandalone] = useState<boolean>(() => {
+    if (typeof window === 'undefined') return false;
+    return (
+      window.matchMedia('(display-mode: standalone)').matches ||
+      (window.navigator as any).standalone === true
+    );
+  });
 
   useEffect(() => {
-    // Check if running in standalone mode (already installed PWA)
-    const isRunningStandalone =
-      window.matchMedia('(display-mode: standalone)').matches ||
-      (window.navigator as any).standalone === true;
-    setIsStandalone(isRunningStandalone);
-
     const updateState = (avail: boolean) => setCanInstall(avail);
     installListeners.add(updateState);
 

@@ -18,7 +18,6 @@ import {
   Moon,
   Monitor,
   Sparkles,
-  RotateCcw,
 } from 'lucide-react';
 import { useWatchlist } from '../../context/WatchlistContext';
 import { useTheme } from '../../context/ThemeContext';
@@ -210,21 +209,6 @@ export const MobileNav: React.FC = () => {
                 </button>
               </div>
             </div>
-
-            {/* Quick reload action for standalone PWA / mobile */}
-            <button
-              type="button"
-              onClick={() => {
-                if (typeof navigator !== 'undefined' && 'vibrate' in navigator) {
-                  navigator.vibrate?.(15);
-                }
-                window.location.reload();
-              }}
-              className="w-full flex items-center justify-center gap-2 p-3 rounded-2xl bg-surface-100/70 dark:bg-surface-800/50 hover:bg-surface-200 dark:hover:bg-surface-800 text-surface-700 dark:text-surface-300 font-bold text-xs transition-all active:scale-95 touch-manipulation"
-            >
-              <RotateCcw className="w-4 h-4 text-brand-500" />
-              <span>Refresh App & Check Updates</span>
-            </button>
           </div>
         </div>
       )}

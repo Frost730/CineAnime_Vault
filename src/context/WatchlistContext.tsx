@@ -286,7 +286,7 @@ export const WatchlistProvider: React.FC<{ children: React.ReactNode }> = ({ chi
   }, [media, updateMediaState]);
 
   const duplicateMedia = useCallback((item: MediaItem): MediaItem => {
-    const { id, dateAdded, ...rest } = item;
+    const { id: _id, dateAdded: _dateAdded, ...rest } = item;
     const duplicated = addMedia({
       ...rest,
       title: `${item.title} (Copy)`,

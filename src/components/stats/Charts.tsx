@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useMemo } from 'react';
 
 // -------------------------------------------------------------
 // 1. Donut Chart for Status Breakdown
@@ -17,6 +17,26 @@ interface DonutChartProps {
 export const DonutChart: React.FC<DonutChartProps> = ({ data, totalLabel = 'Total' }) => {
   const total = data.reduce((sum, d) => sum + d.count, 0);
 
+  const size = 200;
+  const strokeWidth = 28;
+  const radius = (size - strokeWidth) / 2;
+  const circumference = 2 * Math.PI * radius;
+
+  const slicesWithOffsets = useMemo(() => {
+    if (total === 0) return [];
+    let currentOffset = 0;
+    return data.map((slice) => {
+      const strokeDasharray = `${(slice.count / total) * circumference} ${circumference}`;
+      const strokeDashoffset = -currentOffset;
+      currentOffset += (slice.count / total) * circumference;
+      return {
+        ...slice,
+        strokeDasharray,
+        strokeDashoffset,
+      };
+    });
+  }, [data, total, circumference]);
+
   if (total === 0) {
     return (
       <div className="h-64 flex items-center justify-center text-sm text-surface-400">
@@ -24,14 +44,6 @@ export const DonutChart: React.FC<DonutChartProps> = ({ data, totalLabel = 'Tota
       </div>
     );
   }
-
-  // Calculate SVG paths for donut segments
-  const size = 200;
-  const strokeWidth = 28;
-  const radius = (size - strokeWidth) / 2;
-  const circumference = 2 * Math.PI * radius;
-
-  let accumulatedOffset = 0;
 
   return (
     <div className="flex flex-col sm:flex-row items-center justify-center gap-6 p-4">
@@ -48,27 +60,21 @@ export const DonutChart: React.FC<DonutChartProps> = ({ data, totalLabel = 'Tota
             className="text-surface-100 dark:text-surface-800"
           />
 
-          {data.map((slice) => {
-            const strokeDasharray = `${(slice.count / total) * circumference} ${circumference}`;
-            const strokeDashoffset = -accumulatedOffset;
-            accumulatedOffset += (slice.count / total) * circumference;
-
-            return (
-              <circle
-                key={slice.label}
-                cx={size / 2}
-                cy={size / 2}
-                r={radius}
-                fill="transparent"
-                stroke={slice.color}
-                strokeWidth={strokeWidth}
-                strokeDasharray={strokeDasharray}
-                strokeDashoffset={strokeDashoffset}
-                strokeLinecap="round"
-                className="transition-all duration-500 hover:opacity-80"
-              />
-            );
-          })}
+          {slicesWithOffsets.map((slice) => (
+            <circle
+              key={slice.label}
+              cx={size / 2}
+              cy={size / 2}
+              r={radius}
+              fill="transparent"
+              stroke={slice.color}
+              strokeWidth={strokeWidth}
+              strokeDasharray={slice.strokeDasharray}
+              strokeDashoffset={slice.strokeDashoffset}
+              strokeLinecap="round"
+              className="transition-all duration-500 hover:opacity-80"
+            />
+          ))}
         </svg>
 
         {/* Center label */}
