@@ -329,6 +329,7 @@ export const SettingsPage: React.FC = () => {
           onClose={() => setImportCandidate(null)}
           title="Confirm Library Import"
           maxWidth="lg"
+          placement="center"
         >
           <div className="space-y-4">
             <p className="text-sm text-surface-600 dark:text-surface-300">

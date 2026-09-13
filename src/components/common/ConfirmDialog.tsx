@@ -1,5 +1,5 @@
 import React from 'react';
-import { AlertTriangle } from 'lucide-react';
+import { AlertTriangle, Info } from 'lucide-react';
 import { Modal } from './Modal';
 
 interface ConfirmDialogProps {
@@ -24,30 +24,48 @@ export const ConfirmDialog: React.FC<ConfirmDialogProps> = ({
   variant = 'danger',
 }) => {
   return (
-    <Modal isOpen={isOpen} onClose={onClose} maxWidth="md" showCloseButton={false}>
-      <div className="flex flex-col items-center text-center p-2">
+    <Modal
+      isOpen={isOpen}
+      onClose={onClose}
+      maxWidth="sm"
+      placement="center"
+      showCloseButton={false}
+      zIndex={110}
+    >
+      <div className="flex flex-col items-center text-center p-1 sm:p-2">
+        {/* Variant Icon */}
         <div
-          className={`w-12 h-12 rounded-full flex items-center justify-center mb-4 ${
+          className={`w-12 h-12 rounded-2xl flex items-center justify-center mb-3.5 shadow-sm ${
             variant === 'danger'
-              ? 'bg-rose-100 dark:bg-rose-950/50 text-rose-600 dark:text-rose-400'
-              : 'bg-amber-100 dark:bg-amber-950/50 text-amber-600 dark:text-amber-400'
+              ? 'bg-rose-100 dark:bg-rose-950/60 text-rose-600 dark:text-rose-400 border border-rose-200 dark:border-rose-900/50'
+              : variant === 'warning'
+              ? 'bg-amber-100 dark:bg-amber-950/60 text-amber-600 dark:text-amber-400 border border-amber-200 dark:border-amber-900/50'
+              : 'bg-indigo-100 dark:bg-indigo-950/60 text-indigo-600 dark:text-indigo-400 border border-indigo-200 dark:border-indigo-900/50'
           }`}
         >
-          <AlertTriangle className="w-6 h-6" />
+          {variant === 'info' ? (
+            <Info className="w-6 h-6" />
+          ) : (
+            <AlertTriangle className="w-6 h-6" />
+          )}
         </div>
 
-        <h3 className="text-lg font-bold text-surface-900 dark:text-surface-100 mb-2">
+        {/* Title */}
+        <h3 className="text-base sm:text-lg font-bold text-surface-900 dark:text-surface-100 mb-1.5 leading-snug">
           {title}
         </h3>
-        <p className="text-sm text-surface-600 dark:text-surface-400 mb-6 max-w-sm">
+
+        {/* Message */}
+        <p className="text-xs sm:text-sm text-surface-600 dark:text-surface-400 mb-5 max-w-xs leading-relaxed">
           {message}
         </p>
 
-        <div className="flex items-center gap-3 w-full justify-end">
+        {/* Buttons */}
+        <div className="flex items-center gap-2.5 w-full">
           <button
             type="button"
             onClick={onClose}
-            className="flex-1 px-4 py-2.5 rounded-xl border border-surface-200 dark:border-surface-700 font-medium text-surface-700 dark:text-surface-300 hover:bg-surface-100 dark:hover:bg-surface-800 transition-colors"
+            className="flex-1 py-2.5 px-4 rounded-xl border border-surface-200 dark:border-surface-700 font-semibold text-xs sm:text-sm text-surface-700 dark:text-surface-300 hover:bg-surface-100 dark:hover:bg-surface-800 active:scale-95 transition-all touch-manipulation cursor-pointer"
           >
             {cancelLabel}
           </button>
@@ -57,10 +75,12 @@ export const ConfirmDialog: React.FC<ConfirmDialogProps> = ({
               onConfirm();
               onClose();
             }}
-            className={`flex-1 px-4 py-2.5 rounded-xl font-semibold text-white shadow-lg transition-colors ${
+            className={`flex-1 py-2.5 px-4 rounded-xl font-bold text-xs sm:text-sm text-white shadow-md active:scale-95 transition-all touch-manipulation cursor-pointer ${
               variant === 'danger'
                 ? 'bg-rose-600 hover:bg-rose-700 shadow-rose-600/25'
-                : 'bg-amber-600 hover:bg-amber-700 shadow-amber-600/25'
+                : variant === 'warning'
+                ? 'bg-amber-600 hover:bg-amber-700 shadow-amber-600/25'
+                : 'bg-indigo-600 hover:bg-indigo-700 shadow-indigo-600/25'
             }`}
           >
             {confirmLabel}

@@ -1,10 +1,11 @@
-import React, { useState, useEffect } from 'react';
-import { Film, Tv, Sparkles, X, Star } from 'lucide-react';
+import React, { useState, useEffect, useRef } from 'react';
+import { Film, Tv, Sparkles, X, Star, Upload, Trash2, Loader2, Check } from 'lucide-react';
 import { Modal } from '../common/Modal';
 import { useWatchlist } from '../../context/WatchlistContext';
 import { GENRE_OPTIONS, DEFAULT_TAGS } from '../../types/media';
 import type { MediaType, WatchStatus } from '../../types/media';
 import { getPlaceholderPoster } from '../../utils/placeholder';
+import { processImageFile } from '../../utils/imageUpload';
 
 export const MediaFormModal: React.FC = () => {
   const { isFormModalOpen, editingItem, closeModals, addMedia, updateMedia } = useWatchlist();
@@ -24,6 +25,13 @@ export const MediaFormModal: React.FC = () => {
   const [tags, setTags] = useState<string[]>([]);
   const [tagInput, setTagInput] = useState('');
 
+  // Device image upload states
+  const fileInputRef = useRef<HTMLInputElement>(null);
+  const [isProcessingImage, setIsProcessingImage] = useState(false);
+  const [uploadError, setUploadError] = useState<string | null>(null);
+  const [uploadSizeKb, setUploadSizeKb] = useState<number | null>(null);
+  const [isDraggingOver, setIsDraggingOver] = useState(false);
+
   // Anime specific
   const [currentEpisode, setCurrentEpisode] = useState<number>(0);
   const [totalEpisodes, setTotalEpisodes] = useState<string>('');
@@ -33,31 +41,6 @@ export const MediaFormModal: React.FC = () => {
 
   // Errors
   const [errors, setErrors] = useState<Record<string, string>>({});
-
-  // Reset or populate fields when modal opens or editingItem changes
-  useEffect(() => {
-    if (editingItem && editingItem.id) {
-      setTitle(editingItem.title || '');
-      setType(editingItem.type || 'Movie');
-      setStatus(editingItem.status || 'Plan to Watch');
-      setGenres(editingItem.genre || []);
-      setRating(editingItem.rating || 0);
-      setReleaseYear(editingItem.releaseYear || new Date().getFullYear());
-      setPosterUrl(editingItem.posterUrl || '');
-      setDescription(editingItem.description || '');
-      setNotes(editingItem.notes || '');
-      setTags(editingItem.tags || []);
-      setCurrentEpisode(editingItem.progress || 0);
-      setTotalEpisodes(editingItem.totalEpisodes ? editingItem.totalEpisodes.toString() : '');
-      setMovieWatched(editingItem.type === 'Movie' && editingItem.progress >= 1);
-    } else if (editingItem && editingItem.type) {
-      resetForm();
-      setType(editingItem.type);
-    } else {
-      resetForm();
-    }
-    setErrors({});
-  }, [editingItem, isFormModalOpen]);
 
   const resetForm = () => {
     setTitle('');
@@ -74,6 +57,96 @@ export const MediaFormModal: React.FC = () => {
     setCurrentEpisode(0);
     setTotalEpisodes('');
     setMovieWatched(false);
+    setUploadError(null);
+    setUploadSizeKb(null);
+    setIsProcessingImage(false);
+    setIsDraggingOver(false);
+  };
+
+  // Reset or populate fields when modal opens or editingItem changes
+  useEffect(() => {
+    if (editingItem && editingItem.id) {
+      setTitle(editingItem.title || '');
+      setType(editingItem.type || 'Movie');
+      setStatus(editingItem.status || 'Plan to Watch');
+      setGenres(editingItem.genre || []);
+      setRating(editingItem.rating || 0);
+      setReleaseYear(editingItem.releaseYear || new Date().getFullYear());
+      setPosterUrl(editingItem.posterUrl || '');
+      if (editingItem.posterUrl?.startsWith('data:image')) {
+        const approxKb = Math.round(((editingItem.posterUrl.length * 3) / 4 / 1024) * 10) / 10;
+        setUploadSizeKb(approxKb);
+      } else {
+        setUploadSizeKb(null);
+      }
+      setUploadError(null);
+      setDescription(editingItem.description || '');
+      setNotes(editingItem.notes || '');
+      setTags(editingItem.tags || []);
+      setCurrentEpisode(editingItem.progress || 0);
+      setTotalEpisodes(editingItem.totalEpisodes ? editingItem.totalEpisodes.toString() : '');
+      setMovieWatched(editingItem.type === 'Movie' && editingItem.progress >= 1);
+    } else if (editingItem && editingItem.type) {
+      resetForm();
+      setType(editingItem.type);
+    } else {
+      resetForm();
+    }
+    setErrors({});
+  }, [editingItem, isFormModalOpen]);
+
+  const processSelectedFile = async (file: File) => {
+    setUploadError(null);
+    setIsProcessingImage(true);
+
+    try {
+      const { dataUrl, sizeKb } = await processImageFile(file);
+      setPosterUrl(dataUrl);
+      setUploadSizeKb(sizeKb);
+    } catch (err: unknown) {
+      const msg = err instanceof Error ? err.message : 'Failed to process image file.';
+      setUploadError(msg);
+    } finally {
+      setIsProcessingImage(false);
+      if (fileInputRef.current) {
+        fileInputRef.current.value = '';
+      }
+    }
+  };
+
+  const handleFileSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (file) {
+      processSelectedFile(file);
+    }
+  };
+
+  const handleDrop = (e: React.DragEvent) => {
+    e.preventDefault();
+    setIsDraggingOver(false);
+    const file = e.dataTransfer.files?.[0];
+    if (file) {
+      processSelectedFile(file);
+    }
+  };
+
+  const handleDragOver = (e: React.DragEvent) => {
+    e.preventDefault();
+    setIsDraggingOver(true);
+  };
+
+  const handleDragLeave = (e: React.DragEvent) => {
+    e.preventDefault();
+    setIsDraggingOver(false);
+  };
+
+  const handleClearPoster = () => {
+    setPosterUrl('');
+    setUploadSizeKb(null);
+    setUploadError(null);
+    if (fileInputRef.current) {
+      fileInputRef.current.value = '';
+    }
   };
 
   const toggleGenre = (genre: string) => {
@@ -390,35 +463,121 @@ export const MediaFormModal: React.FC = () => {
           )}
         </div>
 
-        {/* Poster URL with Preview */}
-        <div>
-          <label className="block text-xs font-bold uppercase tracking-wider text-surface-500 mb-1.5">
-            Poster Image URL (Optional)
-          </label>
-          <div className="flex gap-3 items-start">
-            <div className="flex-1">
-              <input
-                type="url"
-                value={posterUrl}
-                onChange={(e) => setPosterUrl(e.target.value)}
-                placeholder="https://... (leave empty for procedural poster)"
-                className="w-full px-3.5 py-2.5 rounded-xl bg-surface-50 dark:bg-surface-800/80 border border-surface-200 dark:border-surface-700 text-surface-900 dark:text-surface-100 text-base sm:text-sm outline-none focus:border-brand-500"
-              />
-              <p className="text-[11px] text-surface-400 mt-1">
-                If omitted or broken, a stylized monogram poster will automatically be rendered.
-              </p>
-            </div>
+        {/* Poster Image: Device Upload or URL */}
+        <div className="space-y-2">
+          {/* Hidden native file input supporting mobile camera / gallery and desktop file picker */}
+          <input
+            type="file"
+            ref={fileInputRef}
+            onChange={handleFileSelect}
+            accept="image/*"
+            className="hidden"
+          />
 
-            {/* Live thumbnail preview */}
-            <div className="w-12 h-16 sm:w-14 sm:h-20 rounded-xl overflow-hidden shrink-0 border border-surface-200 dark:border-surface-700 bg-surface-800 shadow-sm">
-              <img
-                src={posterUrl || getPlaceholderPoster(title || 'New Title', type, genres[0])}
-                alt="Poster preview"
-                className="w-full h-full object-cover"
-                onError={(e) => {
-                  (e.target as HTMLImageElement).src = getPlaceholderPoster(title || 'New Title', type, genres[0]);
-                }}
-              />
+          <div className="flex items-center justify-between">
+            <label className="text-xs font-bold uppercase tracking-wider text-surface-500">
+              Poster Cover Image (Optional)
+            </label>
+            {posterUrl && (
+              <button
+                type="button"
+                onClick={handleClearPoster}
+                className="text-[11px] font-semibold text-rose-500 hover:text-rose-600 flex items-center gap-1 active:scale-95 transition-transform"
+              >
+                <Trash2 className="w-3 h-3" />
+                <span>Remove Cover</span>
+              </button>
+            )}
+          </div>
+
+          {/* Upload Drop Zone & Actions Card */}
+          <div
+            onDrop={handleDrop}
+            onDragOver={handleDragOver}
+            onDragLeave={handleDragLeave}
+            className={`p-3.5 sm:p-4 rounded-2xl border transition-all ${
+              isDraggingOver
+                ? 'border-brand-500 bg-brand-50/50 dark:bg-brand-950/40 ring-2 ring-brand-500/20'
+                : 'border-surface-200/90 dark:border-surface-700/70 bg-surface-50 dark:bg-surface-800/40'
+            }`}
+          >
+            <div className="flex flex-col sm:flex-row items-start sm:items-center gap-3.5">
+              {/* Live Preview Thumbnail with status indicator */}
+              <div className="relative w-14 h-20 sm:w-16 sm:h-24 rounded-xl overflow-hidden shrink-0 border border-surface-200 dark:border-surface-700 bg-surface-850 shadow-sm group">
+                <img
+                  src={posterUrl || getPlaceholderPoster(title || 'New Title', type, genres[0])}
+                  alt="Poster preview"
+                  className="w-full h-full object-cover"
+                  onError={(e) => {
+                    (e.target as HTMLImageElement).src = getPlaceholderPoster(title || 'New Title', type, genres[0]);
+                  }}
+                />
+                {isProcessingImage && (
+                  <div className="absolute inset-0 bg-black/60 backdrop-blur-xs flex items-center justify-center text-white">
+                    <Loader2 className="w-5 h-5 animate-spin text-brand-400" />
+                  </div>
+                )}
+              </div>
+
+              {/* Upload Controls */}
+              <div className="flex-1 min-w-0 space-y-2.5 w-full">
+                <div className="flex flex-wrap items-center gap-2">
+                  <button
+                    type="button"
+                    disabled={isProcessingImage}
+                    onClick={() => fileInputRef.current?.click()}
+                    className="flex-1 sm:flex-initial flex items-center justify-center gap-2 px-3.5 py-2 rounded-xl bg-brand-600 hover:bg-brand-700 active:scale-95 text-white font-bold text-xs shadow-sm transition-all disabled:opacity-50 touch-manipulation cursor-pointer"
+                  >
+                    {isProcessingImage ? (
+                      <Loader2 className="w-3.5 h-3.5 animate-spin" />
+                    ) : (
+                      <Upload className="w-3.5 h-3.5" />
+                    )}
+                    <span>{isProcessingImage ? 'Optimizing...' : 'Upload from Device'}</span>
+                  </button>
+
+                  <span className="text-[11px] text-surface-400 hidden sm:inline">or drag & drop</span>
+                </div>
+
+                {/* Direct Image URL input */}
+                <div className="relative">
+                  <input
+                    type="url"
+                    value={posterUrl.startsWith('data:image') ? '' : posterUrl}
+                    onChange={(e) => {
+                      setPosterUrl(e.target.value);
+                      setUploadSizeKb(null);
+                      setUploadError(null);
+                    }}
+                    placeholder={
+                      posterUrl.startsWith('data:image')
+                        ? 'Custom image loaded from device'
+                        : 'Or paste image link (https://...)'
+                    }
+                    className="w-full px-3 py-1.5 text-xs rounded-xl bg-white dark:bg-surface-800 border border-surface-200 dark:border-surface-700 text-surface-900 dark:text-surface-100 outline-none focus:border-brand-500"
+                  />
+                </div>
+
+                {/* Upload Status / Metadata Badge */}
+                {posterUrl.startsWith('data:image') && (
+                  <div className="flex items-center gap-1.5 text-[11px] font-semibold text-emerald-600 dark:text-emerald-400">
+                    <Check className="w-3.5 h-3.5 text-emerald-500 shrink-0" />
+                    <span>
+                      Device image compressed & ready {uploadSizeKb ? `(~${uploadSizeKb} KB)` : ''}
+                    </span>
+                  </div>
+                )}
+
+                {uploadError && (
+                  <p className="text-xs text-rose-500 font-medium">{uploadError}</p>
+                )}
+
+                {!posterUrl && !uploadError && (
+                  <p className="text-[11px] text-surface-400">
+                    Supports JPG, PNG, WebP from phone camera, gallery or PC. Auto-optimized for instant offline loading.
+                  </p>
+                )}
+              </div>
             </div>
           </div>
         </div>
