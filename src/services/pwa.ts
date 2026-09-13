@@ -11,11 +11,19 @@ interface BeforeInstallPromptEvent extends Event {
 }
 
 let deferredPrompt: BeforeInstallPromptEvent | null = null;
-const listeners = new Set<(canInstall: boolean) => void>();
+let swRegistration: ServiceWorkerRegistration | null = null;
+let isUpdateAvailable = false;
 
-function notifyListeners() {
+const installListeners = new Set<(canInstall: boolean) => void>();
+const updateListeners = new Set<(hasUpdate: boolean) => void>();
+
+function notifyInstallListeners() {
   const canInstall = deferredPrompt !== null;
-  listeners.forEach((listener) => listener(canInstall));
+  installListeners.forEach((listener) => listener(canInstall));
+}
+
+function notifyUpdateListeners() {
+  updateListeners.forEach((listener) => listener(isUpdateAvailable));
 }
 
 /**
@@ -30,12 +38,12 @@ export function registerServiceWorker() {
   window.addEventListener('beforeinstallprompt', (e) => {
     e.preventDefault();
     deferredPrompt = e as BeforeInstallPromptEvent;
-    notifyListeners();
+    notifyInstallListeners();
   });
 
   window.addEventListener('appinstalled', () => {
     deferredPrompt = null;
-    notifyListeners();
+    notifyInstallListeners();
     console.log('[PWA] CineAnime Vault installed successfully.');
   });
 
@@ -45,11 +53,42 @@ export function registerServiceWorker() {
     navigator.serviceWorker
       .register(swUrl, { scope: './' })
       .then((reg) => {
+        swRegistration = reg;
         console.log('[PWA] Service Worker registered with scope:', reg.scope);
+
+        // Check for updates periodically when user switches tabs/apps
+        document.addEventListener('visibilitychange', () => {
+          if (document.visibilityState === 'visible') {
+            reg.update().catch(() => {/* offline */});
+          }
+        });
+
+        // Listen for new worker installation
+        reg.addEventListener('updatefound', () => {
+          const installingWorker = reg.installing;
+          if (!installingWorker) return;
+
+          installingWorker.addEventListener('statechange', () => {
+            if (installingWorker.state === 'installed' && navigator.serviceWorker.controller) {
+              isUpdateAvailable = true;
+              notifyUpdateListeners();
+              console.log('[PWA] New version ready for activation.');
+            }
+          });
+        });
       })
       .catch((err) => {
         console.warn('[PWA] Service Worker registration failed:', err);
       });
+
+    // Auto reload when newly activated worker takes control
+    let isReloading = false;
+    navigator.serviceWorker.addEventListener('controllerchange', () => {
+      if (!isReloading) {
+        isReloading = true;
+        window.location.reload();
+      }
+    });
   });
 }
 
@@ -63,7 +102,7 @@ export async function promptAppInstall(): Promise<boolean> {
     await deferredPrompt.prompt();
     const choice = await deferredPrompt.userChoice;
     deferredPrompt = null;
-    notifyListeners();
+    notifyInstallListeners();
     return choice.outcome === 'accepted';
   } catch (err) {
     console.error('[PWA] Install prompt error:', err);
@@ -86,10 +125,10 @@ export function usePWAInstall() {
     setIsStandalone(isRunningStandalone);
 
     const updateState = (avail: boolean) => setCanInstall(avail);
-    listeners.add(updateState);
+    installListeners.add(updateState);
 
     return () => {
-      listeners.delete(updateState);
+      installListeners.delete(updateState);
     };
   }, []);
 
@@ -99,3 +138,35 @@ export function usePWAInstall() {
     promptInstall: promptAppInstall,
   };
 }
+
+/**
+ * Forces the waiting Service Worker to activate and reloads the window.
+ */
+export function reloadToUpdate() {
+  if (swRegistration && swRegistration.waiting) {
+    swRegistration.waiting.postMessage({ type: 'SKIP_WAITING' });
+  } else {
+    window.location.reload();
+  }
+}
+
+/**
+ * Hook providing live update status when a new version of the app is ready.
+ */
+export function usePWAUpdate() {
+  const [hasUpdate, setHasUpdate] = useState<boolean>(isUpdateAvailable);
+
+  useEffect(() => {
+    const handler = (avail: boolean) => setHasUpdate(avail);
+    updateListeners.add(handler);
+    return () => {
+      updateListeners.delete(handler);
+    };
+  }, []);
+
+  return {
+    hasUpdate,
+    reloadToUpdate,
+  };
+}
+

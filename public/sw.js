@@ -35,6 +35,13 @@ self.addEventListener('activate', (event) => {
   );
 });
 
+// Handle update command from client
+self.addEventListener('message', (event) => {
+  if (event.data && event.data.type === 'SKIP_WAITING') {
+    self.skipWaiting();
+  }
+});
+
 // Fetch strategy
 self.addEventListener('fetch', (event) => {
   const { request } = event;

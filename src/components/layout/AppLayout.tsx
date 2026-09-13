@@ -6,6 +6,8 @@ import { MobileNav } from './MobileNav';
 import { MediaFormModal } from '../media/MediaFormModal';
 import { MediaDetailModal } from '../media/MediaDetailModal';
 import { PWAInstallBanner } from '../common/PWAInstallBanner';
+import { PWAUpdateToast } from '../common/PWAUpdateToast';
+import { PullToRefresh } from '../common/PullToRefresh';
 import { X } from 'lucide-react';
 
 export const AppLayout: React.FC = () => {
@@ -47,9 +49,11 @@ export const AppLayout: React.FC = () => {
       <div className="flex-1 flex flex-col h-full overflow-hidden">
         <Header onOpenMobileMenu={() => setIsMobileMenuOpen(true)} />
 
-        <main className="flex-1 overflow-y-auto p-3.5 sm:p-6 lg:p-8 pb-28 md:pb-8">
-          <div className="max-w-7xl mx-auto">
-            <Outlet />
+        <main className="flex-1 overflow-y-auto p-3.5 sm:p-6 lg:p-8 pb-28 md:pb-8 overscroll-contain">
+          <div className="max-w-7xl mx-auto min-h-full">
+            <PullToRefresh>
+              <Outlet />
+            </PullToRefresh>
           </div>
         </main>
 
@@ -60,6 +64,7 @@ export const AppLayout: React.FC = () => {
       <MediaFormModal />
       <MediaDetailModal />
       <PWAInstallBanner />
+      <PWAUpdateToast />
     </div>
   );
 };
