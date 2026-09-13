@@ -43,7 +43,7 @@ const MediaCardComponent: React.FC<MediaCardProps> = ({ item, viewMode = 'grid' 
       <>
         <div
         onClick={() => openDetailModal(item)}
-        className="group relative flex items-center gap-3 sm:gap-4 p-3 sm:p-4 rounded-2xl bg-white dark:bg-surface-900 border border-surface-200 dark:border-surface-800 hover:border-brand-500/50 dark:hover:border-brand-500/50 hover:shadow-lg transition-all duration-200 cursor-pointer active:scale-[0.99] touch-manipulation"
+        className="media-card-item group relative flex items-center gap-3 sm:gap-4 p-3 sm:p-4 rounded-2xl bg-white dark:bg-surface-900 border border-surface-200 dark:border-surface-800 hover:border-brand-500/50 dark:hover:border-brand-500/50 hover:shadow-lg transition-all duration-200 cursor-pointer active:scale-[0.99] touch-manipulation"
       >
         {/* Poster Thumbnail */}
         <div className="relative w-14 sm:w-20 aspect-[2/3] shrink-0 rounded-xl overflow-hidden bg-surface-800 shadow-sm">
@@ -160,7 +160,7 @@ const MediaCardComponent: React.FC<MediaCardProps> = ({ item, viewMode = 'grid' 
     <>
       <div
         onClick={() => openDetailModal(item)}
-        className="group relative flex flex-col rounded-2xl bg-white dark:bg-surface-900 border border-surface-200/80 dark:border-surface-800/80 hover:border-brand-500/50 dark:hover:border-brand-500/50 shadow-sm hover:shadow-xl dark:hover:shadow-brand-950/20 transition-all duration-300 overflow-hidden cursor-pointer active:scale-[0.99] touch-manipulation"
+        className="media-card-item group relative flex flex-col rounded-2xl bg-white dark:bg-surface-900 border border-surface-200/80 dark:border-surface-800/80 hover:border-brand-500/50 dark:hover:border-brand-500/50 shadow-sm hover:shadow-xl dark:hover:shadow-brand-950/20 transition-all duration-300 overflow-hidden cursor-pointer active:scale-[0.99] touch-manipulation"
       >
         {/* Poster Image Container */}
         <div className="relative aspect-[2/3] w-full overflow-hidden bg-surface-900">

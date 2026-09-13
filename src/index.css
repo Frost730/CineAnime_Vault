@@ -48,11 +48,14 @@
   html {
     touch-action: manipulation;
     -webkit-text-size-adjust: 100%;
+    overscroll-behavior-y: contain;
   }
 
   body {
     overflow-x: hidden;
     -webkit-overflow-scrolling: touch;
+    overscroll-behavior-y: contain;
+    text-rendering: optimizeLegibility;
   }
 
   /* Custom smooth scrollbars */
@@ -115,3 +118,10 @@
 .animate-slide-up {
   animation: slideUp 0.25s cubic-bezier(0.16, 1, 0.3, 1) forwards;
 }
+
+/* Rendering performance optimization for card lists on mobile */
+.media-card-item {
+  content-visibility: auto;
+  contain-intrinsic-size: 200px 300px;
+}
+
