@@ -323,6 +323,17 @@ export const MediaDetailModal: React.FC = () => {
               </span>
             )}
           </div>
+
+          {/* Mobile Bottom Exit / Close button */}
+          <div className="sm:hidden pt-2 pb-1">
+            <button
+              type="button"
+              onClick={closeModals}
+              className="w-full py-3 rounded-xl bg-surface-100 dark:bg-surface-800 hover:bg-surface-200 dark:hover:bg-surface-750 active:scale-98 font-bold text-xs sm:text-sm text-surface-700 dark:text-surface-200 transition-all touch-manipulation flex items-center justify-center gap-2 border border-surface-200/80 dark:border-surface-700/80 shadow-xs"
+            >
+              <span>Close Details</span>
+            </button>
+          </div>
         </div>
       </Modal>
 
